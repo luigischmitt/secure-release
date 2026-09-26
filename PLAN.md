@@ -16,23 +16,27 @@ Em cada etapa faremos quatro movimentos: entender o conceito, implementar a meno
 
 **Aprendizado:** distinguir integridade, autenticidade e confidencialidade. Identificar o instante em que um artifact sai do build e entra no deploy.
 
-- [ ] Desenhar o fluxo: código-fonte → pacote → atestação → verificação → Pages.
-- [ ] Definir o adversário de demonstração: alguém substitui ou altera o pacote entre o build e a publicação.
-- [ ] Registrar a política: aceitar somente o pacote cujo hash corresponda a uma atestação válida do repositório, workflow, referência e commit esperados.
-- [ ] Registrar o limite: um pacote assinado pode conter código ruim se o código-fonte ou o workflow autorizado forem comprometidos.
+- [x] Desenhar o fluxo: código-fonte → pacote → atestação → verificação → Pages.
+- [x] Definir o adversário de demonstração: alguém substitui ou altera o pacote entre o build e a publicação.
+- [x] Registrar a política: aceitar somente o pacote cujo hash corresponda a uma atestação válida do repositório, workflow, referência e commit esperados.
+- [x] Registrar o limite: um pacote assinado pode conter código ruim se o código-fonte ou o workflow autorizado forem comprometidos.
 
 **Concluída quando:** conseguimos explicar por que o job de deploy precisa verificar o pacote que ele próprio recebeu, mesmo depois de um build bem-sucedido.
+
+**Situação:** concluída em 26/09/2026. O fluxo, a ameaça, a política e o limite estão registrados em [SPEC.md](SPEC.md); a explicação do motivo da verificação no deploy foi consolidada.
 
 ## Etapa 2 — Criar a aplicação mínima e seu artifact
 
 **Aprendizado:** diferenciar arquivo-fonte, saída de build e unidade de release. O artifact precisa ter bytes definidos antes da assinatura.
 
-- [ ] Criar uma página HTML pequena, com título do projeto e uma versão visível.
-- [ ] Organizar uma saída de publicação que contenha apenas os arquivos do site.
-- [ ] Empacotar essa saída em `site.tar.gz` e conferir o que há dentro do pacote.
-- [ ] Documentar qual versão da página corresponde ao pacote criado.
+- [x] Criar uma página HTML pequena, com título do projeto e uma versão visível.
+- [x] Organizar uma saída de publicação que contenha apenas os arquivos do site.
+- [x] Empacotar essa saída em `site.tar.gz` e conferir o que há dentro do pacote.
+- [x] Documentar qual versão da página corresponde ao pacote criado.
 
 **Concluída quando:** conseguimos abrir a página localmente e identificar sem ambiguidade qual arquivo será assinado e publicado.
+
+**Situação:** página `0.1.0` criada; `site.tar.gz` contém apenas `index.html`. A confirmação visual da abertura local ainda está pendente porque esta sessão não disponibilizou navegador.
 
 ## Etapa 3 — Fazer o experimento com hash
 

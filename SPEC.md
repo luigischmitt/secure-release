@@ -12,6 +12,50 @@ O enunciado do seminário pede uma equipe de duas pessoas, uma implementação p
 
 O capítulo 2 de Stallings fundamenta a escolha: a seção 2.2 apresenta hash e integridade; a 2.3, criptografia de chave pública; e a 2.4, assinatura digital e certificados. Para este projeto, o artifact pode permanecer público. A propriedade que buscamos é detectar alteração e verificar a procedência, não ocultar seu conteúdo.
 
+## Etapa 1 — modelo de ameaça e regra de confiança
+
+### Propriedades de segurança
+
+- **Integridade:** detectar se os bytes de `site.tar.gz` foram alterados. A verificação compara o hash do pacote recebido com o hash coberto pela atestação.
+- **Autenticidade e procedência:** confirmar que a atestação foi produzida pela identidade esperada do workflow deste repositório. Um hash, sozinho, não identifica quem escolheu ou publicou esse hash.
+- **Confidencialidade:** não é um objetivo deste projeto. O site e o pacote são públicos; não precisamos ocultar seu conteúdo.
+
+### Fluxo e fronteira de confiança
+
+O instante de interesse é a passagem do pacote do job de build para o job de deploy. O build bem-sucedido só prova que o job terminou; o job de deploy precisa verificar os bytes que recebeu, pois é esse pacote que será publicado.
+
+```mermaid
+flowchart LR
+    S[Código-fonte em main, commit C] --> B[Workflow autorizado faz o build]
+    B --> P[site.tar.gz e seu SHA-256]
+    P --> A[Atestação vincula o hash à procedência]
+    A --> X[Pacote + atestação são transferidos<br/>fronteira onde pode ocorrer substituição]
+    X --> D[Job de deploy baixa o pacote]
+    D --> V{Hash e procedência válidos?<br/>repo, workflow, ref e commit esperados}
+    V -- Sim --> G[Extrair e publicar no GitHub Pages]
+    V -- Não --> R[Encerrar sem publicar]
+```
+
+### Adversário e política
+
+O adversário da demonstração consegue substituir ou alterar `site.tar.gz` depois do build e antes da publicação. A política aceita o pacote somente quando a atestação é válida, seu hash corresponde aos bytes baixados e a procedência corresponde a:
+
+- repositório `luigischmitt/secure-release`;
+- workflow de release autorizado, planejado em `.github/workflows/release.yml`;
+- referência `refs/heads/main`;
+- commit `github.sha` da mesma execução que produziu o pacote.
+
+O job de deploy verifica o pacote baixado, antes de extrair arquivos ou iniciar a publicação. O workflow e os valores efetivamente verificados serão conferidos quando o Actions for implementado.
+
+| Caso | Decisão esperada | Motivo |
+| --- | --- | --- |
+| Pacote original, bytes e procedência esperados | Aceitar | Hash, assinatura e identidade atendem à política. |
+| Pacote alterado após a atestação | Rejeitar | O hash dos bytes recebidos não corresponde ao hash atestado. |
+| Pacote trocado junto com um novo checksum sem atestação autorizada | Rejeitar | Quem troca os dois valores não prova a identidade do produtor aprovado. |
+| Código ou workflow autorizado comprometido antes de gerar a atestação | Fora do que esta regra impede | O produtor legítimo pode atestar conteúdo malicioso; a proteção depende de controlar mudanças em `main` e no workflow. |
+
+**Limite:** a atestação prova integridade e procedência segundo a identidade configurada. Ela não prova que o conteúdo é benigno nem protege contra comprometimento do código-fonte autorizado, do workflow, das permissões administrativas ou da infraestrutura de confiança.
+
 ## Escolha da técnica
 
 | Técnica | O que demonstraria | Adequação ao projeto |
@@ -24,7 +68,11 @@ O GitHub implementa a terceira opção com Sigstore e atestações de procedênc
 
 ## Proposta de MVP
 
-**Artifact:** um único pacote `site.tar.gz` contendo uma página `index.html` com uma versão visível. O site é o exemplo real de software publicado.
+**Artifact:** `src/index.html` é o arquivo-fonte da página. O script `scripts/build-site.sh` copia a página para `dist/index.html` e cria `site.tar.gz`, contendo somente `index.html` na raiz do pacote. A versão visível nesta primeira página é `0.1.0`. O pacote completo é o objeto de release.
+
+### Etapa 2 — aplicação e artifact
+
+A página mínima está em `src/index.html`. Para gerar a saída de publicação e o pacote, execute `./scripts/build-site.sh`. A saída `dist/` contém `index.html`; a listagem de `site.tar.gz` também contém apenas `index.html`. Portanto, a versão `0.1.0` que aparece na página é exatamente a versão incluída no pacote criado nesta etapa. Os artefatos gerados `dist/` e `site.tar.gz` são ignorados pelo Git.
 
 **Assinatura:** usar a atestação de artifact do GitHub Actions (`actions/attest`). Ela associa o SHA-256 do pacote à procedência do build e é assinada por uma identidade do workflow, sem gerenciar uma chave privada permanente no repositório.
 
