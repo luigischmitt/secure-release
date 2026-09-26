@@ -36,18 +36,20 @@ Em cada etapa faremos quatro movimentos: entender o conceito, implementar a meno
 
 **Concluída quando:** conseguimos abrir a página localmente e identificar sem ambiguidade qual arquivo será assinado e publicado.
 
-**Situação:** página `0.1.0` criada; `site.tar.gz` contém apenas `index.html`. A confirmação visual da abertura local ainda está pendente porque esta sessão não disponibilizou navegador.
+**Situação:** concluída em 26/09/2026. Você confirmou a aparência da página `0.1.0`; `site.tar.gz` contém apenas `index.html`.
 
 ## Etapa 3 — Fazer o experimento com hash
 
 **Aprendizado:** SHA-256 funciona como identificação do conteúdo. Ele detecta mudança nos bytes, mas um hash entregue junto com um arquivo por uma origem não confiável não prova quem criou os dois.
 
-- [ ] Calcular e registrar o SHA-256 do pacote original.
-- [ ] Alterar uma cópia do pacote e confirmar que seu SHA-256 mudou.
-- [ ] Simular a troca simultânea do arquivo e do hash publicado para entender a limitação de usar apenas checksum.
-- [ ] Relacionar o experimento às seções 2.2 e 2.4 do livro: hash, assinatura e autenticação da origem.
+- [x] Calcular e registrar o SHA-256 do pacote original.
+- [x] Alterar uma cópia do pacote e confirmar que seu SHA-256 mudou.
+- [x] Simular a troca simultânea do arquivo e do hash publicado para entender a limitação de usar apenas checksum.
+- [x] Relacionar o experimento às seções 2.2 e 2.4 do livro: hash, assinatura e autenticação da origem.
 
 **Concluída quando:** você consegue responder: “Por que o hash sozinho detecta alteração, mas não autoriza um deploy?”
+
+**Situação:** experimento e valores registrados em [SPEC.md](SPEC.md). Falta consolidar a compreensão antes de avançar à etapa 4.
 
 ## Etapa 4 — Atestar o pacote no GitHub Actions
 

@@ -97,6 +97,19 @@ O arquivo assinado é o pacote. O GitHub Pages cria seu próprio pacote de trans
 - **Controle de publicação:** o passo de deploy fica após a verificação no job que possui a permissão de Pages.
 - **Limite:** uma assinatura válida não prova que o código do site é benigno. A regra depende de proteger a branch principal e o workflow de build contra alterações não autorizadas.
 
+## Registro da etapa 3 — experimento com SHA-256
+
+No pacote local `site.tar.gz` criado para esta demonstração, `shasum -a 256` registrou:
+
+| Amostra | SHA-256 | Resultado |
+| --- | --- | --- |
+| Pacote original, com a página `0.1.0` | `d3671dadf8406fce36232334c83ee172781693f20fcbec49de5ee5b37b6c2d2a` | Hash de referência desta execução local. |
+| Cópia reempacotada após trocar `0.1.0` por `9.9.9` | `f2a2c29f0775ba27641ef098e3e739ec807685c5d6f6b25dd71ec47013513c41` | Digest diferente; os bytes do pacote foram alterados. |
+
+Ao comparar a cópia adulterada com o checksum original, `shasum -a 256 -c` retornou `FAILED`. Depois, ao substituir também o arquivo de checksum pelo digest da cópia adulterada, o mesmo verificador retornou `OK`. Isso demonstra que um checksum detecta divergência em relação ao valor confiado, mas não autentica esse valor: quem consegue trocar o pacote e o checksum pode fazer ambos corresponderem.
+
+Essa evidência se relaciona à seção 2.2 de Stallings: o hash identifica os bytes e torna alterações observáveis. A seção 2.4 acrescenta a assinatura digital, que vincula o hash à chave/identidade do assinante. No projeto, a atestação do GitHub fornece essa ligação e a procedência do workflow; a política verifica a identidade autorizada antes de permitir o deploy. Os digests acima registram apenas o pacote local desta execução e devem ser recalculados sempre que o pacote for recriado.
+
 ## Critérios de aceitação
 
 1. Um pacote produzido pelo workflow esperado passa pela verificação e chega ao Pages.
