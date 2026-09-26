@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Demonstração de release seguro com atestação de artifact.">
+    <title>Secure Release</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f4f7fb;
+        color: #172033;
+      }
+
+      body {
+        display: grid;
+        min-height: 100vh;
+        margin: 0;
+        place-items: center;
+      }
+
+      main {
+        width: min(38rem, calc(100% - 3rem));
+        padding: 3rem;
+        border: 1px solid #d8e0ec;
+        border-radius: 1rem;
+        background: #fff;
+        box-shadow: 0 1rem 3rem #17203312;
+      }
+
+      .eyebrow {
+        color: #3159b7;
+        font-size: .8rem;
+        font-weight: 700;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: .6rem 0;
+        font-size: clamp(2rem, 7vw, 3rem);
+      }
+
+      .version {
+        display: inline-block;
+        margin-top: 1rem;
+        padding: .45rem .7rem;
+        border-radius: 999px;
+        background: #e9efff;
+        color: #24479d;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Demonstração de release verificável</p>
+      <h1>Secure Release</h1>
+      <p>Esta página faz parte de um pacote cuja integridade e procedência serão verificadas antes da publicação.</p>
+      <p class="version">Versão 0.1.0</p>
+    </main>
+  </body>
+</html>
