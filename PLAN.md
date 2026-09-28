@@ -103,6 +103,8 @@ Em cada etapa faremos quatro movimentos: entender o conceito, implementar a meno
 - [ ] Conferir nos logs a razão de cada resultado.
 - [ ] Confirmar que, após uma tentativa rejeitada, o Pages ainda mostra a última versão aprovada.
 
+**Situação:** o workflow oferece quatro opções manuais: `normal`, `tampered-package`, `without-attestation` e `wrong-provenance`. Os três cenários negativos foram configurados para falhar na verificação antes de extrair ou publicar. A evidência em Actions e a conferência de que a página não mudou serão registradas depois que as PRs forem incorporadas e o Pages estiver configurado.
+
 **Concluída quando:** temos evidência clara dos três resultados e nenhuma execução rejeitada altera o site.
 
 ## Etapa 8 — Documentar e ensaiar o seminário

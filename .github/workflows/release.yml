@@ -5,6 +5,17 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      test_case:
+        description: Cenário de validação; os casos negativos devem falhar sem publicar.
+        type: choice
+        options:
+          - normal
+          - tampered-package
+          - without-attestation
+          - wrong-provenance
+        default: normal
+        required: true
 
 permissions: {}
 
@@ -28,9 +39,14 @@ jobs:
         run: ./scripts/build-site.sh
 
       - name: Attest release package
+        if: github.event_name == 'push' || github.event.inputs.test_case != 'without-attestation'
         uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         with:
           subject-path: site.tar.gz
+
+      - name: Simulate package alteration after attestation
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.test_case == 'tampered-package'
+        run: printf '\n# bytes alterados depois da atestação\n' >> site.tar.gz
 
       - name: Upload release package for the next job
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -71,11 +87,16 @@ jobs:
       - name: Verify release attestation and provenance
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TEST_CASE: ${{ github.event.inputs.test_case || 'normal' }}
         run: |
+          expected_ref="$GITHUB_REF"
+          if [[ "$RELEASE_TEST_CASE" == "wrong-provenance" ]]; then
+            expected_ref="refs/heads/not-main"
+          fi
           gh attestation verify incoming/site.tar.gz \
             --repo "$GITHUB_REPOSITORY" \
             --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release.yml" \
-            --source-ref "$GITHUB_REF" \
+            --source-ref "$expected_ref" \
             --source-digest "$GITHUB_SHA"
 
       - name: Extract the verified site file

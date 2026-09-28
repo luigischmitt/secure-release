@@ -118,6 +118,21 @@ O workflow inicia tanto por `workflow_dispatch` quanto por push em `main`. O job
 
 A publicação ainda depende da fonte do Pages estar configurada como GitHub Actions no repositório. Depois da primeira execução, o endereço e a versão publicada serão registrados aqui.
 
+### Etapa 7 — cenários de rejeição
+
+No evento manual, o input `test_case` permite repetir quatro casos sem editar o código:
+
+| Opção | O que o workflow faz | Resultado esperado |
+| --- | --- | --- |
+| `normal` | Atesta, transfere, verifica e publica o pacote normal. | Sucesso e nova publicação. |
+| `tampered-package` | Altera os bytes do pacote depois da atestação e antes do upload. | `gh attestation verify` falha pelo digest; extração e publicação não rodam. |
+| `without-attestation` | Pula a criação da atestação e transfere o pacote. | A verificação falha por ausência de atestação; publicação não roda. |
+| `wrong-provenance` | Mantém o pacote assinado, mas verifica contra uma referência de origem incorreta. | A verificação rejeita a procedência; publicação não roda. |
+
+Os cenários negativos são apenas para execução manual e não alteram o caminho normal de `push` em `main`. Após cada falha, comparar a página com a última versão aprovada e conferir nos logs que os passos de extração, upload do artifact do Pages e deploy foram ignorados.
+
+**Verificação local em 28/09/2026:** o pacote da execução 36476423665 passou com os quatro valores esperados. Uma cópia com bytes anexados depois da atestação e um arquivo de amostra sem atestação foram rejeitados por não terem uma atestação para seus digests. O pacote original com `--source-ref refs/heads/not-main` foi rejeitado porque a procedência declarava `refs/heads/main`. Ainda falta confirmar no Actions que os passos de publicação são ignorados e que o site mantém a versão anterior; isso exige incorporar as PRs e habilitar Pages.
+
 ## Modelo de confiança
 
 - **Integridade:** alterar um byte do pacote muda seu hash e faz a verificação falhar.
