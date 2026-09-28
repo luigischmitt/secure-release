@@ -74,6 +74,12 @@ O GitHub implementa a terceira opção com Sigstore e atestações de procedênc
 
 A página mínima está em `src/index.html`. Para gerar a saída de publicação e o pacote, execute `./scripts/build-site.sh`. A saída `dist/` contém `index.html`; a listagem de `site.tar.gz` também contém apenas `index.html`. Portanto, a versão `0.1.0` que aparece na página é exatamente a versão incluída no pacote criado nesta etapa. Os artefatos gerados `dist/` e `site.tar.gz` são ignorados pelo Git.
 
+### Etapa 4 — workflow de atestação
+
+O workflow `.github/workflows/release.yml` usa `workflow_dispatch` e só executa o job de build quando a referência selecionada é `refs/heads/main`. Ele chama o mesmo `scripts/build-site.sh`, gera a atestação de `site.tar.gz` com `actions/attest`, e envia esse arquivo como artifact chamado `site-package` para o job seguinte. As actions são fixadas em SHAs completos correspondentes a releases versionadas.
+
+As permissões do workflow são vazias por padrão. O job de build recebe `contents: read` para checkout, `id-token: write` para obter a identidade OIDC que a assinatura precisa, `attestations: write` para persistir a atestação e `artifact-metadata: write` para o registro de artifact. O job não recebe permissões de publicação no Pages.
+
 **Assinatura:** usar a atestação de artifact do GitHub Actions (`actions/attest`). Ela associa o SHA-256 do pacote à procedência do build e é assinada por uma identidade do workflow, sem gerenciar uma chave privada permanente no repositório.
 
 **Destino:** GitHub Pages. A publicação consome apenas os arquivos extraídos do pacote que acabou de passar pela verificação.
@@ -147,6 +153,8 @@ O passo a passo de implementação, aprendizado e preparação da apresentação
 - Material do seminário fornecido pelo aluno, `seminario criptografia.pdf`.
 - Stallings e Brown, *Segurança de Computadores*, capítulo 2: <https://www.kufunda.net/publicdocs/Seguran%C3%A7a%20de%20Computadores%20%28WILLIAM%20STALLINGS%29.pdf>.
 - GitHub Docs, [Artifact attestations](https://docs.github.com/en/actions/concepts/security/artifact-attestations) e [Using artifact attestations](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations).
+- GitHub Docs, [Manually running a workflow](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow) e [Workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax).
+- GitHub Actions, [`actions/attest` v4.2.1](https://github.com/actions/attest/releases/tag/v4.2.1), [`actions/checkout` v7.0.1](https://github.com/actions/checkout/releases/tag/v7.0.1) e [`actions/upload-artifact` v7.0.1](https://github.com/actions/upload-artifact/releases/tag/v7.0.1).
 - GitHub CLI, [`gh attestation verify`](https://cli.github.com/manual/gh_attestation_verify).
 - GitHub Docs, [Deploying your website automatically](https://docs.github.com/en/get-started/start-your-journey/deploying-your-website-automatically).
 - GitHub Docs, [Configuring a publishing source for GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).

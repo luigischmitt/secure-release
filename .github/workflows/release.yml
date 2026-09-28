@@ -1,0 +1,38 @@
+name: Build and attest site
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build release package
+        run: ./scripts/build-site.sh
+
+      - name: Attest release package
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: site.tar.gz
+
+      - name: Upload release package for the next job
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: site-package
+          path: site.tar.gz
+          if-no-files-found: error
+          retention-days: 30

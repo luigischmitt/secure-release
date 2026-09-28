@@ -63,6 +63,8 @@ Em cada etapa faremos quatro movimentos: entender o conceito, implementar a meno
 
 **Concluída quando:** uma execução do Actions produz um pacote e sua atestação, e conseguimos explicar de onde vem a identidade do assinante.
 
+**Situação:** workflow implementado em `.github/workflows/release.yml`. O disparo e a inspeção da atestação dependem de o workflow entrar na branch padrão `main`; `workflow_dispatch` só pode ser executado quando o arquivo existe nessa branch.
+
 ## Etapa 5 — Criar a barreira de verificação
 
 **Aprendizado:** a assinatura só protege a publicação se o lado que publica exigir a verificação e aplicar uma política de origem.
