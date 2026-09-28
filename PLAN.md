@@ -1,12 +1,12 @@
 # Plano de execução — Secure Release
 
-**Estado:** planejamento. Vamos implementar em etapas, discutindo o conceito e observando uma prova prática antes de avançar. O seminário está marcado para 30/09/2026.
+**Estado:** em execução. Vamos implementar em etapas, discutindo o conceito e observando uma prova prática antes de avançar. O repositório está público e o seminário está marcado para 30/09/2026.
 
 ## Resultado que queremos alcançar
 
 Uma página `index.html` simples será empacotada como `site.tar.gz`. O GitHub Actions criará uma atestação assinada para esse pacote. Um segundo job verificará os bytes e a origem da atestação antes de publicar o conteúdo no GitHub Pages. Se a verificação falhar, o site publicado deverá permanecer na versão anterior.
 
-Planejamos deixar o repositório público e usar GitHub Pages. A página terá uma versão visível para que o resultado do deploy, ou de seu bloqueio, seja fácil de mostrar. O arquivo HTML é apenas a aplicação de exemplo; o objeto que o pipeline assina e verifica é o pacote completo.
+Usaremos GitHub Pages. A página terá uma versão visível para que o resultado do deploy, ou de seu bloqueio, seja fácil de mostrar. O arquivo HTML é apenas a aplicação de exemplo; o objeto que o pipeline assina e verifica é o pacote completo.
 
 ## Como vamos trabalhar juntos
 
@@ -49,34 +49,36 @@ Em cada etapa faremos quatro movimentos: entender o conceito, implementar a meno
 
 **Concluída quando:** você consegue responder: “Por que o hash sozinho detecta alteração, mas não autoriza um deploy?”
 
-**Situação:** experimento e valores registrados em [SPEC.md](SPEC.md). Falta consolidar a compreensão antes de avançar à etapa 4.
+**Situação:** concluída em 26/09/2026. O experimento e os valores estão registrados em [SPEC.md](SPEC.md); a etapa seguinte foi iniciada a seu pedido.
 
 ## Etapa 4 — Atestar o pacote no GitHub Actions
 
 **Aprendizado:** uma assinatura vincula o hash a uma identidade verificável. No caso do GitHub, a atestação também informa a procedência do build.
 
-- [ ] Criar a execução manual de release na branch principal.
-- [ ] No job de build, produzir exatamente o pacote definido na etapa 2.
-- [ ] Dar ao job somente as permissões necessárias para ler o código e gerar a atestação.
-- [ ] Gerar a atestação com a ferramenta oficial do GitHub e disponibilizar o pacote para o job seguinte.
-- [ ] Inspecionar o resultado: hash do pacote, repositório, workflow e commit associados à atestação.
+- [x] Criar a execução manual de release na branch principal.
+- [x] No job de build, produzir exatamente o pacote definido na etapa 2.
+- [x] Dar ao job somente as permissões necessárias para ler o código e gerar a atestação.
+- [x] Gerar a atestação com a ferramenta oficial do GitHub e disponibilizar o pacote para o job seguinte.
+- [x] Inspecionar o resultado: hash do pacote, repositório, workflow e commit associados à atestação.
 
 **Concluída quando:** uma execução do Actions produz um pacote e sua atestação, e conseguimos explicar de onde vem a identidade do assinante.
 
-**Situação:** workflow implementado em `.github/workflows/release.yml`. O disparo e a inspeção da atestação dependem de o workflow entrar na branch padrão `main`; `workflow_dispatch` só pode ser executado quando o arquivo existe nessa branch.
+**Situação:** concluída em 28/09/2026. A execução [36476423665](https://github.com/luigischmitt/secure-release/actions/runs/36476423665) produziu `site.tar.gz` e sua atestação. O SHA-256 foi `07b0a52435b49ec8a8d46582b1baadef0dc72ae4813d6a828760ac7b816e344d`, ligado ao repositório `luigischmitt/secure-release`, workflow `.github/workflows/release.yml`, referência `refs/heads/main` e commit `b6fe2d3f2cbad8e0e87b833691b94bcf8c1441d1`. A verificação com `gh attestation verify` confirmou a identidade OIDC do workflow e o registro de transparência do Sigstore.
 
 ## Etapa 5 — Criar a barreira de verificação
 
 **Aprendizado:** a assinatura só protege a publicação se o lado que publica exigir a verificação e aplicar uma política de origem.
 
-- [ ] Criar um segundo job que baixa o pacote recebido do job de build.
-- [ ] Verificar o pacote antes de extrair ou enviar qualquer conteúdo ao Pages.
-- [ ] Exigir correspondência com o repositório, workflow, referência e commit da execução autorizada.
-- [ ] Fazer qualquer falha de verificação encerrar o job antes do deploy.
+- [x] Criar um segundo job que baixa o pacote recebido do job de build.
+- [x] Verificar o pacote antes de extrair ou enviar qualquer conteúdo ao Pages.
+- [x] Exigir correspondência com o repositório, workflow, referência e commit da execução autorizada.
+- [ ] Demonstrar que qualquer falha de verificação encerra o fluxo antes da publicação.
 - [ ] Conceder a permissão de Pages somente ao job responsável pela publicação.
 - [ ] Conferir quem pode alterar a branch principal e o workflow, pois essa é a raiz de confiança do projeto.
 
 **Concluída quando:** um pacote válido passa, e o passo de publicação não é alcançado quando a verificação falha.
+
+**Situação:** o job `verify` baixa `site-package`, exige que o arquivo `site.tar.gz` seja o único conteúdo e chama `gh attestation verify` com repositório, workflow, referência e SHA da execução. O pacote só será extraído em uma etapa posterior. A prova do bloqueio e as permissões do deploy serão fechadas junto às etapas 6 e 7.
 
 ## Etapa 6 — Publicar no GitHub Pages
 

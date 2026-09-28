@@ -1,6 +1,6 @@
 # Secure Release — spec inicial
 
-**Status:** rascunho para discussão, atualizado em 26/09/2026. Repositório público planejado e GitHub Pages escolhido como destino.
+**Status:** em implementação, atualizado em 28/09/2026. Repositório público e GitHub Pages escolhido como destino.
 
 ## Objetivo
 
@@ -96,6 +96,22 @@ As permissões do workflow são vazias por padrão. O job de build recebe `conte
 
 O arquivo assinado é o pacote. O GitHub Pages cria seu próprio pacote de transporte a partir dos arquivos verificados; nenhuma etapa de build ou transformação de conteúdo ocorre depois da verificação.
 
+**Execução comprovada em 28/09/2026:** [run 36476423665](https://github.com/luigischmitt/secure-release/actions/runs/36476423665) terminou com sucesso na referência `refs/heads/main`, commit `b6fe2d3f2cbad8e0e87b833691b94bcf8c1441d1`. O pacote `site.tar.gz` tinha SHA-256 `07b0a52435b49ec8a8d46582b1baadef0dc72ae4813d6a828760ac7b816e344d`. `gh attestation verify` aceitou o pacote exigindo o repositório `luigischmitt/secure-release`, o assinante `.github/workflows/release.yml`, a referência e o commit. O certificado foi emitido para a identidade OIDC do GitHub Actions e o timestamp foi verificado no log público de transparência Sigstore. Esses dados são evidência desta execução; novos builds produzem outro digest e outro commit.
+
+### Etapa 5 — barreira de verificação
+
+O segundo job baixa `site-package` em diretório novo, exige que `site.tar.gz` seja o único arquivo e imprime seu SHA-256 para facilitar a inspeção dos logs. Antes de extrair ou transformar o pacote, executa:
+
+```sh
+gh attestation verify incoming/site.tar.gz \
+  --repo "$GITHUB_REPOSITORY" \
+  --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release.yml" \
+  --source-ref "$GITHUB_REF" \
+  --source-digest "$GITHUB_SHA"
+```
+
+O `GITHUB_TOKEN` recebe apenas `attestations: read` neste job; a permissão de Pages será dada ao job de publicação na etapa 6. Como o job termina com erro se a assinatura, o hash ou qualquer campo de procedência não corresponder, uma etapa de publicação dependente dele não poderá iniciar após uma rejeição.
+
 ## Modelo de confiança
 
 - **Integridade:** alterar um byte do pacote muda seu hash e faz a verificação falhar.
@@ -129,10 +145,11 @@ Essa evidência se relaciona à seção 2.2 de Stallings: o hash identifica os b
 | Etapa | Conceito | O que vamos construir e comprovar |
 | --- | --- | --- |
 | 1. Modelo de ameaça | Qual arquivo é confiável e onde ele pode ser trocado | Desenhar o fluxo `build → artifact → verificação → deploy` e definir a política de origem. |
-| 2. Artifact e hash | SHA-256 identifica bytes, mas não identifica sozinho o autor | Gerar o site, criar `site.tar.gz`, calcular seu hash e observar a mudança após adulterar uma cópia. |
-| 3. Assinatura e procedência | Chave pública, certificado, identidade do workflow e commit | Atestar o pacote no Actions, verificar com `gh attestation verify` e inspecionar o resultado. |
-| 4. Bloqueio do deploy | Verificação falha antes de liberar a publicação | Separar build e deploy em jobs, conceder a permissão de Pages apenas ao segundo e testar sucesso/falha. |
-| 5. Publicação e apresentação | Evidência observável do controle | Abrir o site publicado, conferir o commit apresentado e ensaiar a demonstração. |
+| 2. Artifact | Arquivo-fonte, saída de build e pacote de release | Gerar o site e criar `site.tar.gz`, que contém somente `index.html`. |
+| 3. Hash | SHA-256 identifica bytes, mas não identifica sozinho o autor | Calcular o hash, adulterar uma cópia e observar a limitação de substituir pacote e checksum juntos. |
+| 4. Assinatura e procedência | Identidade OIDC do workflow, certificado e commit | Atestar o pacote no Actions, verificar com `gh attestation verify` e inspecionar o resultado. |
+| 5. Bloqueio do deploy | Verificação falha antes de liberar a publicação | Separar build e deploy em jobs, conceder a permissão de Pages apenas ao segundo e testar sucesso/falha. |
+| 6. Publicação e apresentação | Evidência observável do controle | Abrir o site publicado, conferir o commit apresentado e ensaiar a demonstração. |
 
 Em cada etapa, primeiro explicamos o conceito, depois implementamos uma parte pequena e por fim provocamos um caso de falha para entender o limite da proteção.
 
