@@ -32,7 +32,7 @@ O pacote deve listar somente `index.html`. Para repetir o experimento didático 
 
 ### Workflow
 
-Depois de incorporar as PRs e selecionar **Settings → Pages → Build and deployment → GitHub Actions**, pushes em `main` fazem o build, a atestação, a verificação e o deploy. Para executar manualmente, abra **Actions → Build and attest site → Run workflow**, selecione `main` e escolha um caso:
+O GitHub Pages já está configurado para usar GitHub Actions. Depois que a PR #8 entrar em `main`, cada push nessa branch fará o build, a atestação, a verificação e o deploy. Para executar manualmente, abra **Actions → Build and attest site → Run workflow**, selecione `main` e escolha um caso:
 
 | `test_case` | Resultado esperado |
 | --- | --- |
