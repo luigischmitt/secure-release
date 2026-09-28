@@ -73,23 +73,25 @@ Em cada etapa faremos quatro movimentos: entender o conceito, implementar a meno
 - [x] Verificar o pacote antes de extrair ou enviar qualquer conteúdo ao Pages.
 - [x] Exigir correspondência com o repositório, workflow, referência e commit da execução autorizada.
 - [ ] Demonstrar que qualquer falha de verificação encerra o fluxo antes da publicação.
-- [ ] Conceder a permissão de Pages somente ao job responsável pela publicação.
-- [ ] Conferir quem pode alterar a branch principal e o workflow, pois essa é a raiz de confiança do projeto.
+- [x] Conceder a permissão de Pages somente ao job responsável pela publicação.
+- [x] Conferir quem pode alterar a branch principal e o workflow, pois essa é a raiz de confiança do projeto.
 
 **Concluída quando:** um pacote válido passa, e o passo de publicação não é alcançado quando a verificação falha.
 
-**Situação:** o job `verify` baixa `site-package`, exige que o arquivo `site.tar.gz` seja o único conteúdo e chama `gh attestation verify` com repositório, workflow, referência e SHA da execução. O pacote só será extraído em uma etapa posterior. A prova do bloqueio e as permissões do deploy serão fechadas junto às etapas 6 e 7.
+**Situação:** a barreira está no próprio job `deploy`: ele baixa o artifact e exige assinatura, hash, repositório, workflow, referência e commit corretos antes de extrair o pacote. Só esse job recebe `pages: write` e `id-token: write`. A inspeção de 28/09/2026 encontrou somente o proprietário com permissão de escrita, mas nenhuma proteção de branch ou ruleset para `main`; recomendamos ativar proteção por PR como ação administrativa fora do código. A demonstração de falha controlada será feita na etapa 7.
 
 ## Etapa 6 — Publicar no GitHub Pages
 
 **Aprendizado:** um deploy é uma ação separada do build; a autorização de publicar deve vir depois da verificação.
 
-- [ ] Configurar o Pages para publicar a partir de GitHub Actions.
-- [ ] Após a verificação, extrair o pacote e enviar os arquivos verificados ao Pages.
+- [x] Configurar o workflow para publicar via GitHub Actions.
+- [x] No job de deploy, verificar o pacote recebido antes de extrair o único arquivo regular `index.html` e enviá-lo ao Pages.
 - [ ] Publicar a primeira versão e abrir o endereço do site.
 - [ ] Confirmar que a versão exibida corresponde à execução aprovada.
 
 **Concluída quando:** o site está acessível e é possível rastrear sua versão até o pacote e a execução que passaram na verificação.
+
+**Situação:** workflow implementado em `.github/workflows/release.yml`. A publicação roda no mesmo job que baixa e verifica o pacote; só esse job tem `pages: write` e `id-token: write`. A primeira execução depende da PR ser incorporada e do Pages usar GitHub Actions como fonte.
 
 ## Etapa 7 — Testar as decisões de segurança
 

@@ -10,7 +10,7 @@ Publicar uma aplicação web estática pequena no GitHub Pages somente depois de
 
 O enunciado do seminário pede uma equipe de duas pessoas, uma implementação prática de uma técnica ou ferramenta de criptografia e uma apresentação remota de 9 minutos em 30/09/2026. Ele sugere três partes: apresentação do problema (2 min), modelagem e conceitos (2,5 min) e demonstração (4,5 min). Essas divisões são uma sugestão do documento.
 
-O capítulo 2 de Stallings fundamenta a escolha: a seção 2.2 apresenta hash e integridade; a 2.3, criptografia de chave pública; e a 2.4, assinatura digital e certificados. Para este projeto, o artifact pode permanecer público. A propriedade que buscamos é detectar alteração e verificar a procedência, não ocultar seu conteúdo.
+O capítulo 2 de Stallings fundamenta a escolha: a seção 2.2 apresenta hash e integridade; a 2.3, criptografia de chave pública; e a 2.4, assinatura digital e certificados. O artifact é público. A propriedade que buscamos é detectar alteração e verificar a procedência, não ocultar seu conteúdo.
 
 ## Etapa 1 — modelo de ameaça e regra de confiança
 
@@ -92,9 +92,9 @@ As permissões do workflow são vazias por padrão. O job de build recebe `conte
 2. O job de build gera a atestação desse pacote e o envia como artifact da execução.
 3. Um job separado baixa o pacote e chama `gh attestation verify` antes de extrair ou publicar qualquer conteúdo.
 4. A verificação exige o repositório, o workflow assinante, o commit e a referência esperados para aquela execução. Falha ou ausência de atestação interrompe o job.
-5. Depois da verificação, o job prepara os arquivos do site e faz o deploy no GitHub Pages. O job de build não recebe permissão para deploy.
+5. Depois da verificação, o mesmo job `deploy` prepara os arquivos do site e faz o deploy no GitHub Pages. O job de build não recebe permissão para deploy.
 
-O arquivo assinado é o pacote. O GitHub Pages cria seu próprio pacote de transporte a partir dos arquivos verificados; nenhuma etapa de build ou transformação de conteúdo ocorre depois da verificação.
+O arquivo assinado é o pacote. Depois de verificar os bytes recebidos no próprio job de deploy, o workflow lê somente o `index.html` regular esperado e o envia ao Pages. O Pages cria seu pacote de transporte a partir desse arquivo. Nenhuma etapa de build ou transformação do site ocorre depois da verificação.
 
 **Execução comprovada em 28/09/2026:** [run 36476423665](https://github.com/luigischmitt/secure-release/actions/runs/36476423665) terminou com sucesso na referência `refs/heads/main`, commit `b6fe2d3f2cbad8e0e87b833691b94bcf8c1441d1`. O pacote `site.tar.gz` tinha SHA-256 `07b0a52435b49ec8a8d46582b1baadef0dc72ae4813d6a828760ac7b816e344d`. `gh attestation verify` aceitou o pacote exigindo o repositório `luigischmitt/secure-release`, o assinante `.github/workflows/release.yml`, a referência e o commit. O certificado foi emitido para a identidade OIDC do GitHub Actions e o timestamp foi verificado no log público de transparência Sigstore. Esses dados são evidência desta execução; novos builds produzem outro digest e outro commit.
 
@@ -110,7 +110,13 @@ gh attestation verify incoming/site.tar.gz \
   --source-digest "$GITHUB_SHA"
 ```
 
-O `GITHUB_TOKEN` recebe apenas `attestations: read` neste job; a permissão de Pages será dada ao job de publicação na etapa 6. Como o job termina com erro se a assinatura, o hash ou qualquer campo de procedência não corresponder, uma etapa de publicação dependente dele não poderá iniciar após uma rejeição.
+Na etapa 5, o job de verificação recebeu apenas `attestations: read`. Na etapa 6, esse mesmo job tornou-se `deploy` e recebeu também `contents: read`, `pages: write` e `id-token: write`, necessários para publicar. O job `build` continua sem permissões de Pages. Como o job termina com erro se a assinatura, o hash ou qualquer campo de procedência não corresponder, os passos de extração e publicação são ignorados após uma rejeição.
+
+### Etapa 6 — publicação no GitHub Pages
+
+O workflow inicia tanto por `workflow_dispatch` quanto por push em `main`. O job `deploy` baixa o pacote da execução, verifica primeiro hash e procedência, e só então lê o membro regular `index.html`; ele não extrai nomes de arquivo fornecidos pelo tar. O `actions/upload-pages-artifact` prepara a entrada do Pages e `actions/deploy-pages` publica nesse mesmo job. Somente `deploy` recebe `pages: write` e `id-token: write`; o job `build` não pode publicar.
+
+A publicação ainda depende da fonte do Pages estar configurada como GitHub Actions no repositório. Depois da primeira execução, o endereço e a versão publicada serão registrados aqui.
 
 ## Modelo de confiança
 
