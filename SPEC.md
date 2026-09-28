@@ -10,7 +10,7 @@ Publicar uma aplicação web estática pequena no GitHub Pages somente depois de
 
 O enunciado do seminário pede uma equipe de duas pessoas, uma implementação prática de uma técnica ou ferramenta de criptografia e uma apresentação remota de 9 minutos em 30/09/2026. Ele sugere três partes: apresentação do problema (2 min), modelagem e conceitos (2,5 min) e demonstração (4,5 min). Essas divisões são uma sugestão do documento.
 
-O capítulo 2 de Stallings fundamenta a escolha: a seção 2.2 apresenta hash e integridade; a 2.3, criptografia de chave pública; e a 2.4, assinatura digital e certificados. Para este projeto, o artifact pode permanecer público. A propriedade que buscamos é detectar alteração e verificar a procedência, não ocultar seu conteúdo.
+O capítulo 2 de Stallings fundamenta a escolha: a seção 2.2 apresenta hash e integridade; a 2.3, criptografia de chave pública; e a 2.4, assinatura digital e certificados. O artifact é público. A propriedade que buscamos é detectar alteração e verificar a procedência, não ocultar seu conteúdo.
 
 ## Etapa 1 — modelo de ameaça e regra de confiança
 
@@ -92,9 +92,9 @@ As permissões do workflow são vazias por padrão. O job de build recebe `conte
 2. O job de build gera a atestação desse pacote e o envia como artifact da execução.
 3. Um job separado baixa o pacote e chama `gh attestation verify` antes de extrair ou publicar qualquer conteúdo.
 4. A verificação exige o repositório, o workflow assinante, o commit e a referência esperados para aquela execução. Falha ou ausência de atestação interrompe o job.
-5. Depois da verificação, o job prepara os arquivos do site e faz o deploy no GitHub Pages. O job de build não recebe permissão para deploy.
+5. Depois da verificação, o mesmo job `deploy` prepara os arquivos do site e faz o deploy no GitHub Pages. O job de build não recebe permissão para deploy.
 
-O arquivo assinado é o pacote. O GitHub Pages cria seu próprio pacote de transporte a partir dos arquivos verificados; nenhuma etapa de build ou transformação de conteúdo ocorre depois da verificação.
+O arquivo assinado é o pacote. Depois de verificar os bytes recebidos no próprio job de deploy, o workflow lê somente o `index.html` regular esperado e o envia ao Pages. O Pages cria seu pacote de transporte a partir desse arquivo. Nenhuma etapa de build ou transformação do site ocorre depois da verificação.
 
 **Execução comprovada em 28/09/2026:** [run 36476423665](https://github.com/luigischmitt/secure-release/actions/runs/36476423665) terminou com sucesso na referência `refs/heads/main`, commit `b6fe2d3f2cbad8e0e87b833691b94bcf8c1441d1`. O pacote `site.tar.gz` tinha SHA-256 `07b0a52435b49ec8a8d46582b1baadef0dc72ae4813d6a828760ac7b816e344d`. `gh attestation verify` aceitou o pacote exigindo o repositório `luigischmitt/secure-release`, o assinante `.github/workflows/release.yml`, a referência e o commit. O certificado foi emitido para a identidade OIDC do GitHub Actions e o timestamp foi verificado no log público de transparência Sigstore. Esses dados são evidência desta execução; novos builds produzem outro digest e outro commit.
 
@@ -110,7 +110,30 @@ gh attestation verify incoming/site.tar.gz \
   --source-digest "$GITHUB_SHA"
 ```
 
-O `GITHUB_TOKEN` recebe apenas `attestations: read` neste job; a permissão de Pages será dada ao job de publicação na etapa 6. Como o job termina com erro se a assinatura, o hash ou qualquer campo de procedência não corresponder, uma etapa de publicação dependente dele não poderá iniciar após uma rejeição.
+Na etapa 5, o job de verificação recebeu apenas `attestations: read`. Na etapa 6, esse mesmo job tornou-se `deploy` e recebeu também `contents: read`, `pages: write` e `id-token: write`, necessários para publicar. O job `build` continua sem permissões de Pages. Como o job termina com erro se a assinatura, o hash ou qualquer campo de procedência não corresponder, os passos de extração e publicação são ignorados após uma rejeição.
+
+**Execução positiva em Actions:** [run 36481167768](https://github.com/luigischmitt/secure-release/actions/runs/36481167768) terminou com sucesso para `refs/heads/main`, commit `4bc97454cc6af861e6ff36266e034f67aeeaefe7`. O artifact baixado teve SHA-256 `be7dc0294885088e7260b1bffa9345da66c5284c4e6fd73c477351e0379f4777`; o job de verificação aceitou pacote, atestação e procedência. A prova integrada dos cenários negativos será registrada depois que a PR #8 colocar o job `deploy` no `main`.
+
+### Etapa 6 — publicação no GitHub Pages
+
+O workflow inicia tanto por `workflow_dispatch` quanto por push em `main`. O job `deploy` baixa o pacote da execução, verifica primeiro hash e procedência, e só então lê o membro regular `index.html`; ele não extrai nomes de arquivo fornecidos pelo tar. O `actions/upload-pages-artifact` prepara a entrada do Pages e `actions/deploy-pages` publica nesse mesmo job. Somente `deploy` recebe `pages: write` e `id-token: write`; o job `build` não pode publicar.
+
+A fonte do Pages foi configurada como `workflow` em 28/09/2026 pela API do GitHub. Depois que a PR #8 for incorporada, o endereço e a versão publicada serão registrados aqui.
+
+### Etapa 7 — cenários de rejeição
+
+No evento manual, o input `test_case` permite repetir quatro casos sem editar o código:
+
+| Opção | O que o workflow faz | Resultado esperado |
+| --- | --- | --- |
+| `normal` | Atesta, transfere, verifica e publica o pacote normal. | Sucesso e nova publicação. |
+| `tampered-package` | Altera os bytes do pacote depois da atestação e antes do upload. | `gh attestation verify` falha pelo digest; extração e publicação não rodam. |
+| `without-attestation` | Pula a criação da atestação e transfere o pacote. | A verificação falha por ausência de atestação; publicação não roda. |
+| `wrong-provenance` | Mantém o pacote assinado, mas verifica contra uma referência de origem incorreta. | A verificação rejeita a procedência; publicação não roda. |
+
+Os cenários negativos são apenas para execução manual e não alteram o caminho normal de `push` em `main`. Após cada falha, comparar a página com a última versão aprovada e conferir nos logs que os passos de extração, upload do artifact do Pages e deploy foram ignorados.
+
+**Verificação local em 28/09/2026:** o pacote da execução 36476423665 passou com os quatro valores esperados. Uma cópia com bytes anexados depois da atestação e um arquivo de amostra sem atestação foram rejeitados por não terem uma atestação para seus digests. O pacote original com `--source-ref refs/heads/not-main` foi rejeitado porque a procedência declarava `refs/heads/main`. Ainda falta confirmar no Actions que os passos de publicação são ignorados e que o site mantém a versão anterior; isso exige incorporar a PR #8 e executar os modos negativos.
 
 ## Modelo de confiança
 

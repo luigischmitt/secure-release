@@ -1,7 +1,21 @@
 name: Build and attest site
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
+    inputs:
+      test_case:
+        description: Cenário de validação; os casos negativos devem falhar sem publicar.
+        type: choice
+        options:
+          - normal
+          - tampered-package
+          - without-attestation
+          - wrong-provenance
+        default: normal
+        required: true
 
 permissions: {}
 
@@ -25,9 +39,14 @@ jobs:
         run: ./scripts/build-site.sh
 
       - name: Attest release package
+        if: github.event_name == 'push' || github.event.inputs.test_case != 'without-attestation'
         uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         with:
           subject-path: site.tar.gz
+
+      - name: Simulate package alteration after attestation
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.test_case == 'tampered-package'
+        run: printf '\n# bytes alterados depois da atestação\n' >> site.tar.gz
 
       - name: Upload release package for the next job
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -37,12 +56,18 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  verify:
+  deploy:
     if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     permissions:
+      contents: read
       attestations: read
+      pages: write
+      id-token: write
 
     steps:
       - name: Download release package
@@ -62,9 +87,45 @@ jobs:
       - name: Verify release attestation and provenance
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TEST_CASE: ${{ github.event.inputs.test_case || 'normal' }}
         run: |
+          expected_ref="$GITHUB_REF"
+          if [[ "$RELEASE_TEST_CASE" == "wrong-provenance" ]]; then
+            expected_ref="refs/heads/not-main"
+          fi
           gh attestation verify incoming/site.tar.gz \
             --repo "$GITHUB_REPOSITORY" \
             --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release.yml" \
-            --source-ref "$GITHUB_REF" \
+            --source-ref "$expected_ref" \
             --source-digest "$GITHUB_SHA"
+
+      - name: Extract the verified site file
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import tarfile
+
+          destination = Path("site")
+          destination.mkdir()
+
+          with tarfile.open("incoming/site.tar.gz", "r:gz") as archive:
+              members = archive.getmembers()
+              if len(members) != 1 or members[0].name != "index.html" or not members[0].isfile():
+                  raise SystemExit("Release package must contain only a regular index.html")
+              contents = archive.extractfile(members[0])
+              if contents is None:
+                  raise SystemExit("Could not read index.html from the release package")
+              (destination / "index.html").write_bytes(contents.read())
+          PY
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Upload verified site to GitHub Pages
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site
+
+      - name: Publish to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
