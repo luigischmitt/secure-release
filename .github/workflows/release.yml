@@ -36,3 +36,35 @@ jobs:
           path: site.tar.gz
           if-no-files-found: error
           retention-days: 30
+
+  verify:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      attestations: read
+
+    steps:
+      - name: Download release package
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: site-package
+          path: incoming
+
+      - name: Check package layout and print its digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f incoming/site.tar.gz
+          test "$(find incoming -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')" = 1
+          shasum -a 256 incoming/site.tar.gz
+
+      - name: Verify release attestation and provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh attestation verify incoming/site.tar.gz \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release.yml" \
+            --source-ref "$GITHUB_REF" \
+            --source-digest "$GITHUB_SHA"
