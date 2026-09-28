@@ -112,11 +112,13 @@ gh attestation verify incoming/site.tar.gz \
 
 Na etapa 5, o job de verificação recebeu apenas `attestations: read`. Na etapa 6, esse mesmo job tornou-se `deploy` e recebeu também `contents: read`, `pages: write` e `id-token: write`, necessários para publicar. O job `build` continua sem permissões de Pages. Como o job termina com erro se a assinatura, o hash ou qualquer campo de procedência não corresponder, os passos de extração e publicação são ignorados após uma rejeição.
 
+**Execução positiva em Actions:** [run 36481167768](https://github.com/luigischmitt/secure-release/actions/runs/36481167768) terminou com sucesso para `refs/heads/main`, commit `4bc97454cc6af861e6ff36266e034f67aeeaefe7`. O artifact baixado teve SHA-256 `be7dc0294885088e7260b1bffa9345da66c5284c4e6fd73c477351e0379f4777`; o job de verificação aceitou pacote, atestação e procedência. A prova integrada dos cenários negativos será registrada depois que a PR #8 colocar o job `deploy` no `main`.
+
 ### Etapa 6 — publicação no GitHub Pages
 
 O workflow inicia tanto por `workflow_dispatch` quanto por push em `main`. O job `deploy` baixa o pacote da execução, verifica primeiro hash e procedência, e só então lê o membro regular `index.html`; ele não extrai nomes de arquivo fornecidos pelo tar. O `actions/upload-pages-artifact` prepara a entrada do Pages e `actions/deploy-pages` publica nesse mesmo job. Somente `deploy` recebe `pages: write` e `id-token: write`; o job `build` não pode publicar.
 
-A publicação ainda depende da fonte do Pages estar configurada como GitHub Actions no repositório. Depois da primeira execução, o endereço e a versão publicada serão registrados aqui.
+A fonte do Pages foi configurada como `workflow` em 28/09/2026 pela API do GitHub. Depois que a PR #8 for incorporada, o endereço e a versão publicada serão registrados aqui.
 
 ### Etapa 7 — cenários de rejeição
 
@@ -131,7 +133,7 @@ No evento manual, o input `test_case` permite repetir quatro casos sem editar o 
 
 Os cenários negativos são apenas para execução manual e não alteram o caminho normal de `push` em `main`. Após cada falha, comparar a página com a última versão aprovada e conferir nos logs que os passos de extração, upload do artifact do Pages e deploy foram ignorados.
 
-**Verificação local em 28/09/2026:** o pacote da execução 36476423665 passou com os quatro valores esperados. Uma cópia com bytes anexados depois da atestação e um arquivo de amostra sem atestação foram rejeitados por não terem uma atestação para seus digests. O pacote original com `--source-ref refs/heads/not-main` foi rejeitado porque a procedência declarava `refs/heads/main`. Ainda falta confirmar no Actions que os passos de publicação são ignorados e que o site mantém a versão anterior; isso exige incorporar as PRs e habilitar Pages.
+**Verificação local em 28/09/2026:** o pacote da execução 36476423665 passou com os quatro valores esperados. Uma cópia com bytes anexados depois da atestação e um arquivo de amostra sem atestação foram rejeitados por não terem uma atestação para seus digests. O pacote original com `--source-ref refs/heads/not-main` foi rejeitado porque a procedência declarava `refs/heads/main`. Ainda falta confirmar no Actions que os passos de publicação são ignorados e que o site mantém a versão anterior; isso exige incorporar a PR #8 e executar os modos negativos.
 
 ## Modelo de confiança
 

@@ -2,7 +2,7 @@
 
 Demonstração de um pipeline que só publica um site depois de verificar os bytes recebidos e a procedência do pacote. O projeto usa SHA-256, atestações do GitHub Actions com identidade OIDC e GitHub Pages.
 
-**Site:** [luigischmitt.github.io/secure-release](https://luigischmitt.github.io/secure-release/) — ficará disponível depois de configurar o Pages e incorporar as PRs.
+**Site:** [luigischmitt.github.io/secure-release](https://luigischmitt.github.io/secure-release/) — Pages já está configurado; a publicação começa quando a PR #8 for incorporada.
 
 ## Fluxo
 
@@ -61,6 +61,8 @@ Obtenha o commit com `gh run view <RUN_ID> --repo luigischmitt/secure-release --
 ## Evidência já registrada
 
 A [execução 36476423665](https://github.com/luigischmitt/secure-release/actions/runs/36476423665) gerou e verificou uma atestação pública. O SHA-256 de `site.tar.gz` foi `07b0a52435b49ec8a8d46582b1baadef0dc72ae4813d6a828760ac7b816e344d`; a origem identificou o repositório, o workflow, `refs/heads/main` e o commit `b6fe2d3f2cbad8e0e87b833691b94bcf8c1441d1`. A rejeição de pacote adulterado, pacote sem atestação e referência incorreta também passou em verificações locais. Os links das execuções integradas e a versão do Pages serão acrescentados depois que a sequência de PRs for incorporada e executada.
+
+A execução [36481167768](https://github.com/luigischmitt/secure-release/actions/runs/36481167768) validou o caminho positivo do job `verify`: SHA-256 `be7dc0294885088e7260b1bffa9345da66c5284c4e6fd73c477351e0379f4777`, referência `refs/heads/main`, commit `4bc97454cc6af861e6ff36266e034f67aeeaefe7`. A verificação local do pacote baixado também passou com repositório, workflow, referência e commit exigidos. As execuções de publicação e rejeição integradas ainda dependem da PR #8.
 
 ## O que a atestação garante
 

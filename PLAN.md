@@ -78,7 +78,7 @@ Em cada etapa faremos quatro movimentos: entender o conceito, implementar a meno
 
 **Concluída quando:** um pacote válido passa, e o passo de publicação não é alcançado quando a verificação falha.
 
-**Situação:** a barreira está no próprio job `deploy`: ele baixa o artifact e exige assinatura, hash, repositório, workflow, referência e commit corretos antes de extrair o pacote. Só esse job recebe `pages: write` e `id-token: write`. A inspeção de 28/09/2026 encontrou somente o proprietário com permissão de escrita, mas nenhuma proteção de branch ou ruleset para `main`; recomendamos ativar proteção por PR como ação administrativa fora do código. A demonstração de falha controlada será feita na etapa 7.
+**Situação:** o caminho positivo passou em Actions na execução [36481167768](https://github.com/luigischmitt/secure-release/actions/runs/36481167768), commit `4bc97454cc6af861e6ff36266e034f67aeeaefe7`, digest `be7dc0294885088e7260b1bffa9345da66c5284c4e6fd73c477351e0379f4777`. A barreira está no próprio job `deploy`: ele baixa o artifact e exige assinatura, hash, repositório, workflow, referência e commit corretos antes de extrair o pacote. Só esse job recebe `pages: write` e `id-token: write`. A inspeção de 28/09/2026 encontrou somente o proprietário com permissão de escrita, mas nenhuma proteção de branch ou ruleset para `main`; recomendamos ativar proteção por PR. A demonstração integrada de falha controlada será feita na etapa 7.
 
 ## Etapa 6 — Publicar no GitHub Pages
 
@@ -91,7 +91,7 @@ Em cada etapa faremos quatro movimentos: entender o conceito, implementar a meno
 
 **Concluída quando:** o site está acessível e é possível rastrear sua versão até o pacote e a execução que passaram na verificação.
 
-**Situação:** workflow implementado em `.github/workflows/release.yml`. A publicação roda no mesmo job que baixa e verifica o pacote; só esse job tem `pages: write` e `id-token: write`. A primeira execução depende da PR ser incorporada e do Pages usar GitHub Actions como fonte.
+**Situação:** workflow implementado em `.github/workflows/release.yml`. A fonte do Pages foi habilitada como GitHub Actions em 28/09/2026. A publicação roda no mesmo job que baixa e verifica o pacote; só esse job tem `pages: write` e `id-token: write`. A primeira execução depende da PR #8 ser incorporada.
 
 ## Etapa 7 — Testar as decisões de segurança
 
@@ -103,7 +103,7 @@ Em cada etapa faremos quatro movimentos: entender o conceito, implementar a meno
 - [ ] Conferir nos logs a razão de cada resultado.
 - [ ] Confirmar que, após uma tentativa rejeitada, o Pages ainda mostra a última versão aprovada.
 
-**Situação:** o workflow oferece quatro opções manuais: `normal`, `tampered-package`, `without-attestation` e `wrong-provenance`. Os três cenários negativos foram configurados para falhar na verificação antes de extrair ou publicar. A evidência em Actions e a conferência de que a página não mudou serão registradas depois que as PRs forem incorporadas e o Pages estiver configurado.
+**Situação:** o workflow oferece quatro opções manuais: `normal`, `tampered-package`, `without-attestation` e `wrong-provenance`. Os três cenários negativos foram rejeitados por verificações locais e estão configurados para falhar antes da extração e publicação. As execuções integradas e a conferência de que a página não mudou serão registradas depois que a PR #8 for incorporada e publicar a primeira versão.
 
 **Concluída quando:** temos evidência clara dos três resultados e nenhuma execução rejeitada altera o site.
 
@@ -117,7 +117,7 @@ Em cada etapa faremos quatro movimentos: entender o conceito, implementar a meno
 - [ ] Ensaiar a demonstração ao vivo usando um pacote original e uma cópia adulterada.
 - [ ] Cronometrar e ajustar a apresentação para 9 minutos.
 
-**Situação:** `README.md` e o deck de 5 slides `seminario/secure-release-apresentacao-v2.pptx` foram preparados. Os links do Pages e dos testes integrados dependem da incorporação das PRs e das execuções finais. O ensaio e a cronometragem ainda precisam ser feitos pela dupla.
+**Situação:** `README.md` e o deck de 5 slides `seminario/secure-release-apresentacao-v2.pptx` foram preparados. Os links do Pages e dos testes integrados dependem da incorporação da PR #8 e das execuções finais. O ensaio e a cronometragem ainda precisam ser feitos pela dupla.
 
 **Roteiro sugerido:** 2 minutos para o problema; 2,5 minutos para o modelo; 4,5 minutos para mostrar o Pages, a execução aprovada, a verificação ao vivo e a execução rejeitada. Deixaremos as execuções do Actions prontas antes da aula para não depender do tempo de build durante a apresentação.
 
