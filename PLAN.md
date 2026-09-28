@@ -111,11 +111,13 @@ Em cada etapa faremos quatro movimentos: entender o conceito, implementar a meno
 
 **Aprendizado:** explicar o que a criptografia realmente garante, a política aplicada e seus limites.
 
-- [ ] Escrever um README curto com problema, fluxo, técnica escolhida e forma de repetir os testes.
+- [x] Escrever um README curto com problema, fluxo, técnica escolhida e forma de repetir os testes.
 - [ ] Guardar links das execuções aprovada e rejeitada e do site publicado.
-- [ ] Preparar um diagrama simples e poucos slides com hash, assinatura, identidade e barreira de deploy.
+- [x] Preparar um diagrama simples e poucos slides com hash, assinatura, identidade e barreira de deploy.
 - [ ] Ensaiar a demonstração ao vivo usando um pacote original e uma cópia adulterada.
 - [ ] Cronometrar e ajustar a apresentação para 9 minutos.
+
+**Situação:** `README.md` e o deck de 5 slides `seminario/secure-release-apresentacao-v2.pptx` foram preparados. Os links do Pages e dos testes integrados dependem da incorporação das PRs e das execuções finais. O ensaio e a cronometragem ainda precisam ser feitos pela dupla.
 
 **Roteiro sugerido:** 2 minutos para o problema; 2,5 minutos para o modelo; 4,5 minutos para mostrar o Pages, a execução aprovada, a verificação ao vivo e a execução rejeitada. Deixaremos as execuções do Actions prontas antes da aula para não depender do tempo de build durante a apresentação.
 
